@@ -57,10 +57,13 @@ async def on_ready():
 @bot.command(name="purgeword")
 @commands.has_permissions(manage_messages=True)
 async def purge_word(ctx, *, target_word: str):
-    """Deletes messages containing target_word or close misspellings."""
+    """Silently deletes messages containing target_word or close misspellings."""
     word = target_word.strip().lower()
     if not word:
-        await ctx.send("Please provide a word to search for.")
+        await ctx.message.delete()
+        return
+
+    # Delete your command immediately so nobody sees it
     await ctx.message.delete()
 
     for channel in ctx.guild.text_channels:
@@ -76,18 +79,12 @@ async def purge_word(ctx, *, target_word: str):
         except (discord.Forbidden, discord.HTTPException):
             continue
 
-            continue
-
-    await status_msg.edit(
-        content=f"Done. Deleted **{deleted_count}** message(s) matching `{word}` or similar misspellings."
-    )
-
 @purge_word.error
 async def purge_word_error(ctx, error):
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.send("You need **Manage Messages** permission to use this command.")
-    elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Usage: `!purgeword <word>`")
+    try:
+        await ctx.message.delete()
+    except (discord.Forbidden, discord.HTTPException):
+        pass
 
 TOKEN = os.environ.get("DISCORD_TOKEN")
 bot.run(TOKEN)
