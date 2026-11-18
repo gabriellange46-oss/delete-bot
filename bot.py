@@ -61,12 +61,7 @@ async def purge_word(ctx, *, target_word: str):
     word = target_word.strip().lower()
     if not word:
         await ctx.send("Please provide a word to search for.")
-        return
-
     await ctx.message.delete()
-    status_msg = await ctx.send(f"Scanning server for `{word}` and misspellings...")
-
-    deleted_count = 0
 
     for channel in ctx.guild.text_channels:
         if not channel.permissions_for(ctx.guild.me).read_message_history:
@@ -76,12 +71,11 @@ async def purge_word(ctx, *, target_word: str):
 
         try:
             async for msg in channel.history(limit=None):
-                if msg.id == status_msg.id:
-                    continue
                 if is_fuzzy_match(msg.content, word):
                     await msg.delete()
-                    deleted_count += 1
         except (discord.Forbidden, discord.HTTPException):
+            continue
+
             continue
 
     await status_msg.edit(
